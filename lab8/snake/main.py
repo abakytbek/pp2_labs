@@ -5,26 +5,33 @@ pygame.init()
 
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 400
-TILE_SIZE = 20 #размер клетки
+TILE_SIZE = 20
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+ORANGE = (255, 165, 0)
+YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
 
-#okno
 DISPLAYSURF = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Snake Game')
 
 font_small = pygame.font.SysFont('Verdana', 25)
 font_big = pygame.font.SysFont('Verdana', 40)
 
-snake = [(100, 100), (80, 100), (60, 100)] #начальная позиция змейки
-direction = "RIGHT" #направление
-new_direction= direction #буфер для смены направления
-fposition = (200, 200) #позиция еды
-fspawn = True  #флаг для появления еды
+snake = [(100, 100), (80, 100), (60, 100)]
+direction = "RIGHT"
+new_direction = direction
+
+fposition = (200, 200)
+fspawn = True
+fvalue = 1
+fcolor = RED
+ftimer = 0
+flifetime = 5000
+
 score = 0
 level = 1
 speed = 10
@@ -38,20 +45,34 @@ def show_score_level():
     DISPLAYSURF.blit(level_text, (SCREEN_WIDTH - 100, 10))
 
 def game_over():
-    textt = font_big.render("Game Over", True, RED)
-    DISPLAYSURF.blit(textt, (90, 150))
+    text = font_big.render("Game Over", True, RED)
+    DISPLAYSURF.blit(text, (90, 150))
     pygame.display.flip()
     time.sleep(2)
     pygame.quit()
     sys.exit()
 
-##новая еда(чтобы не появлялась на змейке)
-def random_food_position():
+def generate_food():
+    global fvalue, fcolor, ftimer
+    fvalue = random.choice([1, 2, 3, 5])
+
+    if fvalue == 1:
+        fcolor = RED
+    elif fvalue == 2:
+        fcolor = ORANGE
+    elif fvalue == 3:
+        fcolor = YELLOW
+    else:
+        fcolor = BLUE
+
     while True:
         x = random.randrange(0, SCREEN_WIDTH - TILE_SIZE, TILE_SIZE)
         y = random.randrange(0, SCREEN_HEIGHT - TILE_SIZE, TILE_SIZE)
-        if (x, y) not in snake: ##проверка(чтобы не на змейке)
-            return (x, y)
+        if (x, y) not in snake:
+            break
+
+    ftimer = pygame.time.get_ticks()
+    return (x, y)
 
 while True:
     
@@ -79,7 +100,7 @@ while True:
     if new_direction == "RIGHT" and direction != "LEFT":
         direction = "RIGHT"
 
-    x, y = snake[0] 
+    x, y = snake[0]
     if direction == "UP":
         y -= TILE_SIZE
     if direction == "DOWN":
@@ -88,41 +109,40 @@ while True:
         x -= TILE_SIZE
     if direction == "RIGHT":
         x += TILE_SIZE
-    snake_head = (x, y)
-    snake.insert(0, snake_head) #добавляем новую голову
 
-    ##проверка выхода за границу экрана
+    snake_head = (x, y)
+    snake.insert(0, snake_head)
+
     if x < 0 or x >= SCREEN_WIDTH or y < 0 or y >= SCREEN_HEIGHT:
         game_over()
 
-    ##проверка столкновения с самой змейкой
     if snake_head in snake[1:]:
         game_over()
 
-    ##проверка 
     if snake_head == fposition:
-        score += 1
+        score += fvalue
         fspawn = False
-        if score % 3 == 0: #каждый раз повышаем уровень
+
+        if score % 10 == 0:
             level += 1
             speed += 2
     else:
-        snake.pop() #если не сьели еду то убираем хвост
+        snake.pop()
 
-    ##если съедена то создаём новую
+    if pygame.time.get_ticks() - ftimer > flifetime:
+        fspawn = False
+
     if not fspawn:
-        fposition = random_food_position()
-    fspawn = True
+        fposition = generate_food()
+        fspawn = True
 
-    DISPLAYSURF.fill(WHITE) #фон
+    DISPLAYSURF.fill(WHITE)
 
     for pos in snake:
-        pygame.draw.rect(DISPLAYSURF, GREEN, pygame.Rect(pos[0], pos[1], TILE_SIZE, TILE_SIZE))
+        pygame.draw.rect(DISPLAYSURF, GREEN, (pos[0], pos[1], TILE_SIZE, TILE_SIZE))
 
-    pygame.draw.rect(DISPLAYSURF, RED, pygame.Rect(fposition[0], fposition[1], TILE_SIZE, TILE_SIZE))
+    pygame.draw.rect(DISPLAYSURF, fcolor, (fposition[0], fposition[1], TILE_SIZE, TILE_SIZE))
 
     show_score_level()
-
     pygame.display.update()
-
     clock.tick(speed)

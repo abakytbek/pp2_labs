@@ -6,12 +6,9 @@ def main():
     clock = pygame.time.Clock()
 
     radius = 15
-    x = 0
-    y = 0
     mode = 'blue'
-    tool = 'brush'  ##
+    tool = 'brush'
     points = []
-    
     start_pos = None
 
     while True:
@@ -20,10 +17,11 @@ def main():
         ctrl_held = pressed[pygame.K_LCTRL] or pressed[pygame.K_RCTRL]
 
         for event in pygame.event.get():
-            # выход из программы
+
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w and ctrl_held: return
                 if event.key == pygame.K_F4 and alt_held: return
@@ -36,34 +34,74 @@ def main():
                 elif event.key == pygame.K_b:
                     mode = 'blue'
 
-                ##
-                elif event.key == pygame.K_p: #прямоугольник
+                elif event.key == pygame.K_p:
                     tool = 'rect'
-                elif event.key == pygame.K_c: #круг
+                elif event.key == pygame.K_c:
                     tool = 'circle'
-                elif event.key == pygame.K_t: #кисть тул
+                elif event.key == pygame.K_t:
                     tool = 'brush'
-                elif event.key == pygame.K_e: #ластик
+                elif event.key == pygame.K_e:
                     tool = 'eraser'
+
+                elif event.key == pygame.K_k:
+                    tool = 'square'
+                elif event.key == pygame.K_v:
+                    tool = 'right_triangle'
+                elif event.key == pygame.K_q:
+                    tool = 'equilateral'
+                elif event.key == pygame.K_h:
+                    tool = 'rhombus'
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    if tool in ['rect', 'circle']:
-                        start_pos = event.pos ##начало фигуры
-                if event.button == 3: #правая кнопка умен радиус
+                    if tool in ['rect', 'circle', 'square', 'right_triangle', 'equilateral', 'rhombus']:
+                        start_pos = event.pos
+                if event.button == 3:
                     radius = max(1, radius - 1)
-                elif event.button == 2: #средняя кнопка увел радиус
+                elif event.button == 2:
                     radius = min(200, radius + 1)
 
             if event.type == pygame.MOUSEBUTTONUP:
-                if tool == 'rect' and start_pos:
-                    end_pos = event.pos
-                    rect = pygame.Rect(start_pos, (end_pos[0]-start_pos[0], end_pos[1]-start_pos[1]))
-                    pygame.draw.rect(screen, get_color(mode), rect, 2)
-                elif tool == 'circle' and start_pos:
-                    end_pos = event.pos
-                    r = int(((end_pos[0]-start_pos[0])**2 + (end_pos[1]-start_pos[1])**2)**0.5)
-                    pygame.draw.circle(screen, get_color(mode), start_pos, r, 2)
+                end_pos = event.pos
+
+                if start_pos:
+                    sx, sy = start_pos
+                    ex, ey = end_pos
+
+                    if tool == 'rect':
+                        rect = pygame.Rect(start_pos, (ex - sx, ey - sy))
+                        pygame.draw.rect(screen, get_color(mode), rect, 2)
+
+                    elif tool == 'circle':
+                        r = int(((ex - sx)**2 + (ey - sy)**2)**0.5)
+                        pygame.draw.circle(screen, get_color(mode), start_pos, r, 2)
+
+                    elif tool == 'square':
+                        side = max(abs(ex - sx), abs(ey - sy))
+                        rect = pygame.Rect(sx, sy, side, side)
+                        pygame.draw.rect(screen, get_color(mode), rect, 2)
+
+                    elif tool == 'right_triangle':
+                        points_tri = [(sx, sy), (ex, sy), (sx, ey)]
+                        pygame.draw.polygon(screen, get_color(mode), points_tri, 2)
+
+                    elif tool == 'equilateral':
+                        side = abs(ex - sx)
+                        height = int((3**0.5)/2 * side)
+                        p1 = (sx, sy)
+                        p2 = (sx + side, sy)
+                        p3 = (sx + side/2, sy - height)
+                        pygame.draw.polygon(screen, get_color(mode), (p1, p2, p3), 2)
+
+                    elif tool == 'rhombus':
+                        dx = ex - sx
+                        dy = ey - sy
+                        p1 = (sx, sy - dy//2)
+                        p2 = (sx + dx//2, sy)
+                        p3 = (sx, sy + dy//2)
+                        p4 = (sx - dx//2, sy)
+                        pygame.draw.polygon(screen, get_color(mode), (p1, p2, p3, p4), 2)
+
                 start_pos = None
 
             if event.type == pygame.MOUSEMOTION:
@@ -82,7 +120,6 @@ def main():
 
         pygame.display.flip()
         clock.tick(60)
-
 
 def get_color(color_mode):
     if color_mode == 'blue':
@@ -109,7 +146,7 @@ def drawLineBetween(screen, index, start, end, width, color_mode):
     dy = start[1] - end[1]
     iterations = max(abs(dx), abs(dy))
     for i in range(iterations):
-        progress = 1.0 * i / iterations
+        progress = i / iterations
         aprogress = 1 - progress
         x = int(aprogress * start[0] + progress * end[0])
         y = int(aprogress * start[1] + progress * end[1])
