@@ -53,7 +53,7 @@ def save_game_state(user_id, score, snake, fposition, speed, level):
     conn.commit()
     cur.close()
     conn.close()
-    print("✔ Game is saved!")
+    print("Game is saved")
 
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 400

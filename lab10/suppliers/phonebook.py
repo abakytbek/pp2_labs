@@ -21,7 +21,7 @@ def create_table():
     conn.commit()
     cur.close()
     conn.close()
-    print("✔️ Таблица phonebook создана (или уже существует).")
+    print("Tables are created")
 
 def insert_from_csv(path):
     conn = get_connection()
@@ -31,7 +31,11 @@ def insert_from_csv(path):
         reader = csv.reader(file)
         next(reader)  
 
-        for name, phone in reader:
+        for row in reader:
+            if len(row) < 2:
+                continue
+            name, phone = row
+
             cur.execute("""
                 INSERT INTO phonebook(first_name, phone)
                 VALUES (%s, %s)
@@ -41,12 +45,12 @@ def insert_from_csv(path):
     conn.commit()
     cur.close()
     conn.close()
-    print("✔️ Данные из CSV загружены.")
+    print("CSV data uploaded")
 
 
 def insert_from_console():
-    name = input("Введите имя: ")
-    phone = input("Введите телефон: ")
+    name = input("Enter name: ")
+    phone = input("Enter phone: ")
 
     conn = get_connection()
     cur = conn.cursor()
@@ -60,14 +64,14 @@ def insert_from_console():
     conn.commit()
     cur.close()
     conn.close()
-    print("Запись добавлена.")
+    print("Added")
 
 
 def update_record():
-    search_phone = input("Введите телефон пользователя, которого хотите изменить: ")
+    search_phone = input("Enter phone that u need to change: ")
 
-    new_name = input("Новое имя (нажмите Enter, если менять не нужно): ")
-    new_phone = input("Новый телефон (Enter, если менять не нужно): ")
+    new_name = input("New name: ")
+    new_phone = input("New phone: ")
 
     conn = get_connection()
     cur = conn.cursor()
@@ -89,22 +93,22 @@ def update_record():
     conn.commit()
     cur.close()
     conn.close()
-    print("Данные обновлены.")
+    print("Data updated")
 
 
 def query_data():
-    print("\nФильтр поиска:")
-    print("1 — телефон начинается с …")
-    print("2 — имя равно …")
-    print("3 — показать всех")
+    print("\nSearch:")
+    print("1.phone started with:")
+    print("2.name:")
+    print("3.show all")
 
-    choice = input("Ваш выбор: ")
+    choice = input("Your choice: ")
 
     conn = get_connection()
     cur = conn.cursor()
 
     if choice == "1":
-        prefix = input("Начинается с: ")
+        prefix = input("Start with: ")
         cur.execute("""
             SELECT first_name, phone
             FROM phonebook
@@ -112,7 +116,7 @@ def query_data():
         """, (prefix + "%",))
 
     elif choice == "2":
-        name = input("Введите имя: ")
+        name = input("Enter name: ")
         cur.execute("""
             SELECT first_name, phone
             FROM phonebook
@@ -124,7 +128,7 @@ def query_data():
 
     rows = cur.fetchall()
 
-    print("\n---- Результаты ----")
+    print("\nResults")
     for r in rows:
         print(f"{r[0]} — {r[1]}")
 
@@ -133,40 +137,40 @@ def query_data():
 
 
 def delete_record():
-    print("Удалить по:")
-    print("1 — имени")
-    print("2 — телефону")
+    print("Delete by:")
+    print("1.name")
+    print("2.phone")
 
-    choice = input("Ваш выбор: ")
+    choice = input("Your choice: ")
 
     conn = get_connection()
     cur = conn.cursor()
 
     if choice == "1":
-        name = input("Введите имя: ")
+        name = input("Enter name: ")
         cur.execute("DELETE FROM phonebook WHERE first_name = %s;", (name,))
     else:
-        phone = input("Введите телефон: ")
+        phone = input("Enter phone: ")
         cur.execute("DELETE FROM phonebook WHERE phone = %s;", (phone,))
 
     conn.commit()
     cur.close()
     conn.close()
-    print("✔️ Запись удалена.")
+    print("Deleted")
 
 
 def menu():
     while True:
-        print("\n===== PHONEBOOK =====")
-        print("1 — Создать таблицу")
-        print("2 — Загрузить данные из CSV")
-        print("3 — Добавить запись вручную")
-        print("4 — Обновить данные")
-        print("5 — Поиск")
-        print("6 — Удалить запись")
-        print("0 — Выход")
+        print("\nPHONEBOOK")
+        print("1.Create table")
+        print("2.Load data from CSV")
+        print("3.Add record")
+        print("4.Update record")
+        print("5.Search")
+        print("6.Delete record")
+        print("0.Exit")
 
-        choice = input("Выберите действие: ")
+        choice = input("Choose an option: ")
 
         if choice == "1":
             create_table()
@@ -183,7 +187,7 @@ def menu():
         elif choice == "0":
             break
         else:
-            print("Неверный выбор. Попробуйте снова.")
+            print("Invalid option. Try again.")
 
 
 if __name__ == "__main__":

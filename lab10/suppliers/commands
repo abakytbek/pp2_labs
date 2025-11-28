@@ -1,0 +1,24 @@
+\c suppliers
+\dt #посмотреть таблицы
+SELECT * FROM user_profile; №посмотреть данные
+
+
+phonebook
+ suppliers:
+
+cd ~/Desktop/pp2_labs/lab10/suppliers
+
+source venv/bin/activate
+
+check
+
+which python3
+\
+.../suppliers/venv/bin/python3
+Иначе — ты НЕ в venv.
+
+pip install psycopg2-binary
+
+check
+
+pip freeze
