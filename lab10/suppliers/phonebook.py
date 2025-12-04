@@ -15,13 +15,13 @@ def create_table():
             id SERIAL PRIMARY KEY,
             first_name VARCHAR(100) NOT NULL,
             phone VARCHAR(20) UNIQUE NOT NULL
-        )
+        );
     """)
 
     conn.commit()
     cur.close()
     conn.close()
-    print("Tables are created")
+    print("Table created.\n")
 
 def insert_from_csv(path):
     conn = get_connection()
@@ -29,24 +29,18 @@ def insert_from_csv(path):
 
     with open(path, "r") as file:
         reader = csv.reader(file)
-        next(reader)  
+        next(reader)
 
         for row in reader:
             if len(row) < 2:
                 continue
             name, phone = row
-
-            cur.execute("""
-                INSERT INTO phonebook(first_name, phone)
-                VALUES (%s, %s)
-                ON CONFLICT (phone) DO NOTHING;
-            """, (name, phone))
+            cur.execute("CALL insert_or_update_user(%s, %s);", (name, phone))
 
     conn.commit()
     cur.close()
     conn.close()
-    print("CSV data uploaded")
-
+    print("CSV upload complete.\n")
 
 def insert_from_console():
     name = input("Enter name: ")
@@ -55,120 +49,104 @@ def insert_from_console():
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
-        INSERT INTO phonebook(first_name, phone)
-        VALUES (%s, %s)
-        ON CONFLICT (phone) DO NOTHING;
-    """, (name, phone))
+    cur.execute("CALL insert_or_update_user(%s, %s);", (name, phone))
 
     conn.commit()
     cur.close()
     conn.close()
-    print("Added")
+    print("Record added/updated.\n")
 
-
-def update_record():
-    search_phone = input("Enter phone that u need to change: ")
-
-    new_name = input("New name: ")
-    new_phone = input("New phone: ")
+def search_pattern():
+    pattern = input("Enter search pattern: ")
 
     conn = get_connection()
     cur = conn.cursor()
 
-    if new_name:
-        cur.execute("""
-            UPDATE phonebook
-            SET first_name = %s
-            WHERE phone = %s;
-        """, (new_name, search_phone))
-
-    if new_phone:
-        cur.execute("""
-            UPDATE phonebook
-            SET phone = %s
-            WHERE phone = %s;
-        """, (new_phone, search_phone))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-    print("Data updated")
-
-
-def query_data():
-    print("\nSearch:")
-    print("1.phone started with:")
-    print("2.name:")
-    print("3.show all")
-
-    choice = input("Your choice: ")
-
-    conn = get_connection()
-    cur = conn.cursor()
-
-    if choice == "1":
-        prefix = input("Start with: ")
-        cur.execute("""
-            SELECT first_name, phone
-            FROM phonebook
-            WHERE phone LIKE %s;
-        """, (prefix + "%",))
-
-    elif choice == "2":
-        name = input("Enter name: ")
-        cur.execute("""
-            SELECT first_name, phone
-            FROM phonebook
-            WHERE first_name = %s;
-        """, (name,))
-
-    else:
-        cur.execute("SELECT first_name, phone FROM phonebook;")
-
+    cur.execute("SELECT * FROM search_records(%s);", (pattern,))
     rows = cur.fetchall()
 
-    print("\nResults")
-    for r in rows:
-        print(f"{r[0]} — {r[1]}")
+    print("\nResults:")
+    for row in rows:
+        print(row)
 
     cur.close()
     conn.close()
+    print()
 
+def pagination():
+    limit = int(input("Enter LIMIT: "))
+    offset = int(input("Enter OFFSET: "))
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM get_paginated(%s, %s);", (limit, offset))
+    rows = cur.fetchall()
+
+    print("\nPage results:")
+    for row in rows:
+        print(row)
+
+    cur.close()
+    conn.close()
+    print()
+
+def insert_many():
+    n = int(input("How many users to add? "))
+
+    names = []
+    phones = []
+
+    for _ in range(n):
+        names.append(input("Name: "))
+        phones.append(input("Phone: "))
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM insert_many_users(%s, %s);", (names, phones))
+    bad = cur.fetchone()[0]
+
+    print("\nIncorrect phone numbers:", bad)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print()
 
 def delete_record():
-    print("Delete by:")
-    print("1.name")
-    print("2.phone")
+    print("Delete:")
+    print("1. By name")
+    print("2. By phone")
 
-    choice = input("Your choice: ")
+    choice = input("Choose: ")
 
     conn = get_connection()
     cur = conn.cursor()
 
     if choice == "1":
         name = input("Enter name: ")
-        cur.execute("DELETE FROM phonebook WHERE first_name = %s;", (name,))
+        cur.execute("CALL delete_user(%s, NULL);", (name,))
     else:
         phone = input("Enter phone: ")
-        cur.execute("DELETE FROM phonebook WHERE phone = %s;", (phone,))
+        cur.execute("CALL delete_user(NULL, %s);", (phone,))
 
     conn.commit()
     cur.close()
     conn.close()
-    print("Deleted")
-
+    print("Record deleted.\n")
 
 def menu():
     while True:
-        print("\nPHONEBOOK")
-        print("1.Create table")
-        print("2.Load data from CSV")
-        print("3.Add record")
-        print("4.Update record")
-        print("5.Search")
-        print("6.Delete record")
-        print("0.Exit")
+        print("\nPHONEBOOK SYSTEM (SQL procedures/functions)")
+        print("1. Create table")
+        print("2. Load data from CSV")
+        print("3. Insert or update user")
+        print("4. Insert many users")
+        print("5. Search records")
+        print("6. Pagination")
+        print("7. Delete record")
+        print("0. Exit")
 
         choice = input("Choose an option: ")
 
@@ -179,16 +157,18 @@ def menu():
         elif choice == "3":
             insert_from_console()
         elif choice == "4":
-            update_record()
+            insert_many()
         elif choice == "5":
-            query_data()
+            search_pattern()
         elif choice == "6":
+            pagination()
+        elif choice == "7":
             delete_record()
         elif choice == "0":
+            print("Goodbye!")
             break
         else:
-            print("Invalid option. Try again.")
-
+            print("Invalid option.\n")
 
 if __name__ == "__main__":
     menu()

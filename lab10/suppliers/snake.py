@@ -19,7 +19,7 @@ def get_or_create_user():
     user = cur.fetchone()
 
     if user:
-        print(f"Hi, {username}! Your level: {user[1]}")
+        print(f"Hi, {username} Your level: {user[1]}")
         uid, level = user
     else:
         cur.execute(
@@ -161,7 +161,7 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_p:
-                print("Игра сохранена (P)")
+                print("Game is saved")
                 save_game_state(user_id, score, snake, fposition, speed, level)
 
             if event.key == pygame.K_UP:
